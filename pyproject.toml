@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-uuid-server"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
   { name="Pomazan Bohdan", email="pomazan.bogdan@gmail.com" },
 ]
@@ -27,6 +27,3 @@ dependencies = [
 
 [project.scripts]
 mcp-uuid-server = "mcp_uuid_server.server:main"
-
-[tool.hatch.build.targets.wheel]
-packages = ["mcp_uuid_server"]

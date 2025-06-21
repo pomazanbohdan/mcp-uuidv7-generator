@@ -1,4 +1,4 @@
-# MCP UUID Server
+# mcp-uuidv7-generator
 
 A Model Context Protocol (MCP) server for generating UUIDv7 strings.
 

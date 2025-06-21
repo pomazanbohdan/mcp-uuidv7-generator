@@ -37,7 +37,7 @@ If the server were packaged and published in a way that `uvx` could run it (like
   "mcpServers": {
     "uuid_v7_generator": {
       "command": "uvx",
-      "args": ["mcp-uuid-server-package-name"] // Hypothetical package name
+      "args": ["mcp-uuid-server"] // Hypothetical package name
     }
   }
 }

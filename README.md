@@ -2,6 +2,8 @@
 
 A Model Context Protocol (MCP) server for generating UUIDv7 strings.
 
+## Created with vibe-coding using trae.ai
+
 ## Features
 
 - Get a single UUIDv7 string.

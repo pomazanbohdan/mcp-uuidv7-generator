@@ -91,3 +91,16 @@ To set up the development environment:
     ```bash
     python mcp_uuid_server/server.py
     ```
+
+## Troubleshooting
+
+### JSON Parse Error
+
+If you encounter an error message similar to `MCP ERROR (uuid_v7_generator): SyntaxError: JSON Parse error: Unable to parse JSON string`, this typically indicates that the MCP client (e.g., Claude Desktop) sent a malformed JSON request to this server.
+
+To resolve this:
+-   **Verify Client Requests**: Check the JSON requests being formulated and sent by your MCP client. Ensure they are syntactically correct JSON.
+-   **Check Encoding**: Ensure that the JSON requests are UTF-8 encoded, as this is the standard for JSON.
+-   **Tool Arguments**:
+    -   For `get_uuidv7`, the client should send a request indicating the tool name, usually with no parameters or an empty parameter object.
+    -   For `get_uuidv7_batch`, the client must send parameters as a JSON object with an integer `count` field, for example: `{"count": 10}`. Sending a string for count (e.g. `{"count": "10"}`) or other malformations in the request structure can lead to parsing issues.

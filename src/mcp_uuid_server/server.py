@@ -67,7 +67,7 @@ def main():
     except KeyboardInterrupt:
         logger.info("Server shutdown requested by user")
     except Exception as e:
-        logger.error(f"Server error: {e}")
+        logger.error(f"Server error: {e}", exc_info=True)
         raise
     finally:
         logger.info("UUIDv7 MCP Server stopped")

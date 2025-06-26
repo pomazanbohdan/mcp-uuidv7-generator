@@ -1,1 +1,6 @@
-dist
+dist/
+__pycache__/
+request.json
+src/mcp_uuid_server/__pycache__/
+src/mcp_uuid_server/__pycache__/server.cpython-313.pyc
+.env

@@ -1,11 +1,12 @@
 from mcp.server.fastmcp import FastMCP
-from .uuid_core import get_uuidv7, get_uuidv7_batch
+from mcp_uuid_server.uuid_core import get_uuidv7, get_uuidv7_batch
 from typing import List
 import logging
 import sys
 import json
 import threading
 import importlib.metadata
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +106,7 @@ def main():
         logger.info("Received stop signal. Shutting down...")
     finally:
         logger.info("Server stopped.")
+    time.sleep(3600)
 
 if __name__ == "__main__":
     main()

@@ -1,76 +1,103 @@
 from mcp.server.fastmcp import FastMCP
-import uuid6
+from .uuid_core import get_uuidv7, get_uuidv7_batch
 from typing import List
 import logging
 import sys
+import json
+import threading
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
-)
 logger = logging.getLogger(__name__)
 
 # Create an MCP server instance
 mcp = FastMCP(name="UUIDv7Server", description="Provides UUIDv7 generation tools.")
 
+# --- HTTP Server (FastMCP) Tools ---
 @mcp.tool()
-def get_uuidv7() -> str:
+def get_uuidv7_http() -> str:
     """
-    Generates and returns a single UUIDv7 string.
+    Генерує та повертає один рядок UUIDv7 через HTTP.
     """
-    uuid_value = str(uuid6.uuid7())
-    logger.info(f"Generated UUIDv7: {uuid_value}")
-    return uuid_value
+    return get_uuidv7()
 
 @mcp.tool()
-def get_uuidv7_batch(count: int) -> List[str]:
+def get_uuidv7_batch_http(count: int) -> List[str]:
     """
-    Generates and returns a list of UUIDv7 strings.
-
-    Args:
-        count: The number of UUIDv7 strings to generate.
-               Must be a positive integer.
-
-    Returns:
-        A list of UUIDv7 strings.
-
-    Raises:
-        ValueError: If count is not a positive integer.
+    Генерує та повертає список рядків UUIDv7 через HTTP.
     """
-    if not isinstance(count, int) or count <= 0:
-        logger.error(f"Invalid count parameter: {count}. Must be a positive integer.")
-        raise ValueError("Count must be a positive integer.")
+    return get_uuidv7_batch(count)
+
+# --- Логіка STDIO сервера ---
+def _handle_stdio_request(request_json: str):
+    """
+    Обробляє один запит, отриманий через stdio. (Приватна функція)
+    """
+    response = {"id": None, "result": None, "error": None}
+    try:
+        request_data = json.loads(request_json)
+        method = request_data.get("method")
+        params = request_data.get("params", {})
+        response["id"] = request_data.get("id")
+
+        if method == "get_uuidv7":
+            result = get_uuidv7()
+            response["result"] = result
+        elif method == "get_uuidv7_batch":
+            count = params.get("count")
+            if count is None:
+                raise ValueError("Відсутній параметр 'count' для get_uuidv7_batch.")
+            result = get_uuidv7_batch(count)
+            response["result"] = result
+        else:
+            raise ValueError(f"Невідомий метод: '{method}'")
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Помилка розбору JSON: {e} - Запит: '{request_json}'", exc_info=True)
+        response["error"] = {"code": -32700, "message": "Помилка розбору", "data": str(e)}
+    except ValueError as e:
+        logger.error(f"Помилка недійсного запиту: {e}")
+        response["error"] = {"code": -32602, "message": "Недійсні параметри", "data": str(e)}
+    except Exception as e:
+        logger.error(f"Внутрішня помилка сервера: {e}", exc_info=True)
+        response["error"] = {"code": -32603, "message": "Внутрішня помилка", "data": str(e)}
     
-    logger.info(f"Generating batch of {count} UUIDv7 strings")
-    uuids = [str(uuid6.uuid7()) for _ in range(count)]
-    logger.info(f"Successfully generated {len(uuids)} UUIDv7 strings")
-    return uuids
+    sys.stdout.write(json.dumps(response) + "\n")
+    sys.stdout.flush()
+
+def _run_stdio_server_loop():
+    """
+    Основний цикл для stdio сервера, призначений для запуску в окремому потоці.
+    """
+    logger.info("Потік STDIO запущено. Очікування запитів на stdin...")
+    try:
+        for line in sys.stdin:
+            line = line.strip()
+            if not line:
+                continue
+            logger.debug(f"STDIO отримано: {line}")
+            _handle_stdio_request(line)
+    except Exception as e:
+        logger.error(f"Критична помилка в потоці STDIO: {e}", exc_info=True)
 
 def main():
     """
-    Runs the MCP server.
-    This function is referenced in pyproject.toml as the entry point.
+    Запускає UUIDv7 сервер одночасно в режимах HTTP та STDIO.
     """
-    logger.info("Starting UUIDv7 MCP Server...")
-    logger.info("Server name: UUIDv7Server")
-    logger.info("Available tools:")
-    logger.info("  - get_uuidv7: Generate a single UUIDv7")
-    logger.info("  - get_uuidv7_batch: Generate multiple UUIDv7s")
-    logger.info("Server is ready to accept connections.")
-    
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - [%(threadName)s] - %(levelname)s - %(message)s', handlers=[logging.StreamHandler(sys.stderr)])
+
+    logger.info("Запуск сервера в комбінованому режимі (HTTP + STDIO)...")
+
+    # Запускаємо stdio-сервер у фоновому потоці-демоні
+    stdio_thread = threading.Thread(target=_run_stdio_server_loop, name="STDIO_Thread", daemon=True)
+    stdio_thread.start()
+
+    # Запускаємо HTTP-сервер в основному потоці
+    logger.info("Запуск HTTP сервера...")
     try:
         mcp.run()
     except KeyboardInterrupt:
-        logger.info("Server shutdown requested by user")
-    except Exception as e:
-        logger.error(f"Server error: {e}", exc_info=True)
-        raise
+        logger.info("Отримано сигнал зупинки. Завершення роботи...")
     finally:
-        logger.info("UUIDv7 MCP Server stopped")
+        logger.info("Сервер зупинено.")
 
 if __name__ == "__main__":
     main()

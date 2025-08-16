@@ -63,7 +63,16 @@ def main():
     """
     Starts the UUIDv7 server in STDIO mode.
     """
+    # Configure logging to output to stderr
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', handlers=[logging.StreamHandler(sys.stderr)])
+
+    # Check if the server is being run in an interactive terminal
+    if sys.stdin.isatty():
+        # If so, print a help message and exit, as this is not the intended use.
+        sys.stderr.write("Цей сервер призначений для роботи в режимі STDIO і має запускатися іншим процесом (наприклад, IDE або MCP-клієнтом).\n")
+        sys.stderr.write("Він не приймає з'єднання через мережу. Для отримання додаткової інформації див. README.md.\n")
+        sys.stderr.flush()
+        sys.exit(0)
 
     try:
         version = importlib.metadata.version("mcp-uuid-server")
